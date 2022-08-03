@@ -23,6 +23,7 @@ route.post("/api/addUser", (req, res, next) => {
   const number = req.body.number;
   const name = req.body.name;
   const address = "address 1";
+
   var sql = "INSERT INTO UserTable VALUES ?";
   const values = [[null, email, name, number, password, address]];
   console.log(values);
