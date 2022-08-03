@@ -10,6 +10,9 @@ const { profile } = require("console");
 var fs = require("fs");
 
 const { v4: uuidv4 } = require("uuid");
+const nodemailer = require("nodemailer");
+const dotenv = require("dotenv");
+dotenv.config({ path: "././config.env" });
 
 const controller2 = require("../controller/usercontroller");
 const protect = require("../middleware/verify");
@@ -50,6 +53,38 @@ route.post("/api/addUser", (req, res, next) => {
     {
       console.log("inserted", results);
 
+      try {
+        //send mail
+        let mailTransporter = nodemailer.createTransport({
+          host: process.env.HOST,
+          //   service: process.env.SERVICE,
+          port: Number(process.env.EMAIL_PORT),
+          security: process.env.SECURITY,
+          pool: true,
+          auth: {
+            user: process.env.USER_EMAIL,
+            pass: process.env.PASS,
+          },
+        });
+        let details = {
+          from: process.env.USER_EMAIL,
+          to: email,
+          subject: "Verify email for goa natural account",
+          text: `<a>http://localhost:3000/verifyEmail?email=${email}&verificationLink=${verificationLink} </a>`,
+        };
+        mailTransporter.sendMail(details, (err) => {
+          if (err) {
+            console.log("it has an error,err", err);
+            res.end();
+          } else {
+            console.log("it has send");
+            res.end();
+          }
+        });
+      } catch (error) {
+        console.log("email not sent!");
+        console.log(error);
+      }
       res.end();
     }
   });
