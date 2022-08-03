@@ -9,6 +9,8 @@ const asyncHandler = require("express-async-handler");
 const { profile } = require("console");
 var fs = require("fs");
 
+const { v4: uuidv4 } = require("uuid");
+
 const controller2 = require("../controller/usercontroller");
 const protect = require("../middleware/verify");
 
@@ -24,9 +26,23 @@ route.post("/api/addUser", (req, res, next) => {
   const name = req.body.name;
   const address = "address 1";
 
+  const verifyEmail = false;
+  const verificationLink = uuidv4();
+
   var sql = "INSERT INTO UserTable VALUES ?";
-  const values = [[null, email, name, number, password, address]];
-  console.log(values);
+  const values = [
+    [
+      null,
+      email,
+      name,
+      number,
+      password,
+      address,
+      verifyEmail,
+      verificationLink,
+    ],
+  ];
+
   db.query(sql, [values], (err, results, fields) => {
     if (err) {
       console.log(err);
