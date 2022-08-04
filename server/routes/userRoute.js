@@ -32,60 +32,113 @@ route.post("/api/addUser", (req, res, next) => {
   const verifyEmail = false;
   const verificationLink = uuidv4();
 
-  var sql = "INSERT INTO UserTable VALUES ?";
-  const values = [
-    [
-      null,
-      email,
-      name,
-      number,
-      password,
-      address,
-      verifyEmail,
-      verificationLink,
-    ],
-  ];
+  let sql = `SELECT * FROM UserTable Where email="${email}" `;
+  db.query(sql, function (err, result) {
+    if (result.length != 0) {
+      res.send({
+        message: "user already exist in database with current email ",
+      });
+    } else {
+      sql = "INSERT INTO UserTable VALUES ?";
+      const values = [
+        [
+          null,
+          email,
+          name,
+          number,
+          password,
+          address,
+          verifyEmail,
+          verificationLink,
+        ],
+      ];
 
-  db.query(sql, [values], (err, results, fields) => {
-    if (err) {
-      console.log(err);
+      db.query(sql, [values], (err, results, fields) => {
+        if (err) {
+          console.log(err);
+        } else {
+          console.log("inserted", results);
+
+          try {
+            //send mail
+            let mailTransporter = nodemailer.createTransport({
+              host: process.env.HOST,
+              //   service: process.env.SERVICE,
+              port: Number(process.env.EMAIL_PORT),
+              security: process.env.SECURITY,
+              pool: true,
+              auth: {
+                user: process.env.USER_EMAIL,
+                pass: process.env.PASS,
+              },
+            });
+            let details = {
+              from: process.env.USER_EMAIL,
+              to: email,
+              subject: "Verify email for goa natural account",
+              text: `<a>http://localhost:3000/verifyEmail?email=${email}&verificationLink=${verificationLink} </a>`,
+            };
+            mailTransporter.sendMail(details, (err) => {
+              if (err) {
+                console.log("it has an error,err", err);
+                res.send({
+                  message:
+                    "The email that entered is wrong, not able to send verification link ",
+                });
+              } else {
+                console.log("it has send");
+                res.send({
+                  message:
+                    "Verification email is send, Go to your email to verify account and check your spam folder, if you don't see the email",
+                });
+              }
+            });
+          } catch (error) {
+            console.log("email not sent!");
+            console.log(error);
+            res.send({
+              message:
+                "The email that entered is wrong, not able to send verification link ",
+            });
+          }
+        }
+      });
     }
-    {
-      console.log("inserted", results);
+  });
+});
 
-      try {
-        //send mail
-        let mailTransporter = nodemailer.createTransport({
-          host: process.env.HOST,
-          //   service: process.env.SERVICE,
-          port: Number(process.env.EMAIL_PORT),
-          security: process.env.SECURITY,
-          pool: true,
-          auth: {
-            user: process.env.USER_EMAIL,
-            pass: process.env.PASS,
-          },
-        });
-        let details = {
-          from: process.env.USER_EMAIL,
-          to: email,
-          subject: "Verify email for goa natural account",
-          text: `<a>http://localhost:3000/verifyEmail?email=${email}&verificationLink=${verificationLink} </a>`,
-        };
-        mailTransporter.sendMail(details, (err) => {
+route.post("/api/verifyEmail", (req, res, next) => {
+  const email = req.body.email;
+  const verifyLink = req.body.verifyLink;
+
+  let sql = `SELECT * FROM UserTable Where email="${email}" and verificationLink="${verifyLink}"`;
+  db.query(sql, function (err, result) {
+    if (err) {
+      res.send({
+        status: false,
+        message: "user email or verification link is wrong",
+      });
+      throw err;
+    } else {
+      console.log(result);
+
+      if (result?.length === 1) {
+        sql = `UPDATE UserTable SET verifyEmail = true WHERE email="${email}" and verificationLink="${verifyLink}"`;
+        db.query(sql, function (err, result) {
           if (err) {
-            console.log("it has an error,err", err);
-            res.end();
+            res.send({
+              status: false,
+              message: "Unable to update verification",
+            });
+            throw err;
           } else {
-            console.log("it has send");
-            res.end();
+            res.send({
+              status: true,
+              message: "User email is verified...",
+            });
           }
         });
-      } catch (error) {
-        console.log("email not sent!");
-        console.log(error);
       }
-      res.end();
     }
   });
 });
