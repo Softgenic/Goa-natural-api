@@ -101,10 +101,6 @@ route.post("/api/addUser", (req, res, next) => {
                 "The email that entered is wrong, not able to send verification link ",
             });
           }
-          res.send({
-            message:
-              "The email that entered is wrong, not able to send verification link ",
-          });
         }
       });
     }
