@@ -94,11 +94,35 @@ route.post("/api/verifyEmail", (req, res, next) => {
   const email = req.body.email;
   const verifyLink = req.body.verifyLink;
 
-  var sql = `SELECT * FROM UserTable Where email="${email}" and verificationLink="${verifyLink}"`;
+  let sql = `SELECT * FROM UserTable Where email="${email}" and verificationLink="${verifyLink}"`;
   db.query(sql, function (err, result) {
-    if (err) throw err;
-    console.log(result);
-    res.send(result);
+    if (err) {
+      res.send({
+        status: false,
+        message: "user email or verification link is wrong",
+      });
+      throw err;
+    } else {
+      console.log(result);
+
+      if (result?.length === 1) {
+        sql = `UPDATE UserTable SET verifyEmail = true WHERE email="${email}" and verificationLink="${verifyLink}"`;
+        db.query(sql, function (err, result) {
+          if (err) {
+            res.send({
+              status: false,
+              message: "Unable to update verification",
+            });
+            throw err;
+          } else {
+            res.send({
+              status: true,
+              message: "User email is verified...",
+            });
+          }
+        });
+      }
+    }
   });
 });
 
