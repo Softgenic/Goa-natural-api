@@ -90,6 +90,18 @@ route.post("/api/addUser", (req, res, next) => {
   });
 });
 
+route.post("/api/verifyEmail", (req, res, next) => {
+  const email = req.body.email;
+  const verifyLink = req.body.verifyLink;
+
+  var sql = `SELECT * FROM UserTable Where email="${email}" and verificationLink="${verifyLink}"`;
+  db.query(sql, function (err, result) {
+    if (err) throw err;
+    console.log(result);
+    res.send(result);
+  });
+});
+
 route.post("/api/adduseraddress", controller2.useraddress);
 route.get("/api/useraddress", controller2.getaddress);
 
